@@ -2,7 +2,7 @@ import throttle from "lodash.throttle";
 import React, { PureComponent } from "react";
 import { ExcalidrawImperativeAPI } from "../../types";
 import { ErrorDialog } from "../../components/ErrorDialog";
-import { APP_NAME, ENV, EVENT } from "../../constants";
+import { ENV, EVENT } from "../../constants";
 import { ImportedDataState } from "../../data/types";
 import { ExcalidrawElement } from "../../element/types";
 import {
@@ -19,7 +19,7 @@ import {
 import {
   decryptAESGEM,
   generateCollaborationLinkData,
-  getCollaborationLink,
+  getCollaborationLinkData,
   SocketUpdateDataSource,
   SOCKET_SERVER,
 } from "../data";
@@ -28,15 +28,10 @@ import {
   loadFromFirebase,
   saveToFirebase,
 } from "../data/firebase";
-import {
-  importUsernameFromLocalStorage,
-  saveUsernameToLocalStorage,
-  STORAGE_KEYS,
-} from "../data/localStorage";
+import { saveUsernameToLocalStorage, STORAGE_KEYS } from "../data/localStorage";
 import Portal from "./Portal";
 import RoomDialog from "./RoomDialog";
 import { createInverseContext } from "../../createInverseContext";
-import { t } from "../../i18n";
 import { UserIdleState } from "../../types";
 import { IDLE_THRESHOLD, ACTIVE_THRESHOLD } from "../../constants";
 import { trackEvent } from "../../analytics";
@@ -69,6 +64,9 @@ type ReconciledElements = readonly ExcalidrawElement[] & {
 
 interface Props {
   excalidrawAPI: ExcalidrawImperativeAPI;
+  isCollaborating: boolean;
+  activeRoomLink: string;
+  username: string;
 }
 
 const {
@@ -95,20 +93,24 @@ class CollabWrapper extends PureComponent<Props, CollabState> {
     this.state = {
       modalIsShown: false,
       errorMessage: "",
-      username: importUsernameFromLocalStorage() || "",
+      username: props.username,
       userState: UserIdleState.ACTIVE,
-      activeRoomLink: "",
+      activeRoomLink: props.activeRoomLink,
     };
     this.portal = new Portal(this);
     this.excalidrawAPI = props.excalidrawAPI;
     this.activeIntervalId = null;
     this.idleTimeoutId = null;
+    this.isCollaborating = props.isCollaborating;
   }
 
   componentDidMount() {
     window.addEventListener(EVENT.BEFORE_UNLOAD, this.beforeUnload);
     window.addEventListener(EVENT.UNLOAD, this.onUnload);
-
+    if (this.isCollaborating) {
+      saveUsernameToLocalStorage(this.state.username);
+      this.openPortal(getCollaborationLinkData(this.state.activeRoomLink));
+    }
     if (
       process.env.NODE_ENV === ENV.TEST ||
       process.env.NODE_ENV === ENV.DEVELOPMENT
@@ -131,6 +133,9 @@ class CollabWrapper extends PureComponent<Props, CollabState> {
       EVENT.VISIBILITY_CHANGE,
       this.onVisibilityChange,
     );
+    if (this.isCollaborating) {
+      this.closePortal();
+    }
     if (this.activeIntervalId) {
       window.clearInterval(this.activeIntervalId);
       this.activeIntervalId = null;
@@ -188,18 +193,17 @@ class CollabWrapper extends PureComponent<Props, CollabState> {
     }
   };
 
-  openPortal = async () => {
+  openPortal = async (
+    existingRoomLinkData: null | { roomId: string; roomKey: string },
+  ) => {
     trackEvent("share", "room creation");
-    return this.initializeSocketClient(null);
+    return this.initializeSocketClient(existingRoomLinkData);
   };
 
   closePortal = () => {
     this.saveCollabRoomToFirebase();
-    if (window.confirm(t("alerts.collabStopOverridePrompt"))) {
-      window.history.pushState({}, APP_NAME, window.location.origin);
-      this.destroySocketClient();
-      trackEvent("share", "room closed");
-    }
+    this.destroySocketClient();
+    trackEvent("share", "room closed");
   };
 
   private destroySocketClient = (opts?: { isUnload: boolean }) => {
@@ -230,11 +234,6 @@ class CollabWrapper extends PureComponent<Props, CollabState> {
       ({ roomId, roomKey } = existingRoomLinkData);
     } else {
       ({ roomId, roomKey } = await generateCollaborationLinkData());
-      window.history.pushState(
-        {},
-        APP_NAME,
-        getCollaborationLink({ roomId, roomKey }),
-      );
     }
 
     const scenePromise = resolvablePromise<ImportedDataState | null>();
@@ -636,7 +635,7 @@ class CollabWrapper extends PureComponent<Props, CollabState> {
             activeRoomLink={activeRoomLink}
             username={username}
             onUsernameChange={this.onUsernameChange}
-            onRoomCreate={this.openPortal}
+            onRoomCreate={() => this.openPortal(null)}
             onRoomDestroy={this.closePortal}
             setErrorMessage={(errorMessage) => {
               this.setState({ errorMessage });

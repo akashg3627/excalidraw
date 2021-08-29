@@ -391,6 +391,20 @@ class App extends React.Component<AppProps, AppState> {
       renderFooter,
       renderCustomStats,
     } = this.props;
+    const renderSaveAndClearBtn = () => {
+      return (
+        <button
+          onClick={() =>
+            this.props.onSaveAndClear?.(
+              this.scene.getElementsIncludingDeleted(),
+              this.state,
+            )
+          }
+        >
+          Save Image and Clear
+        </button>
+      );
+    };
 
     return (
       <div
@@ -427,6 +441,7 @@ class App extends React.Component<AppProps, AppState> {
               toggleZenMode={this.toggleZenMode}
               langCode={getLanguage().code}
               isCollaborating={this.props.isCollaborating || false}
+              renderSaveAndClearBtn={renderSaveAndClearBtn}
               renderTopRightUI={renderTopRightUI}
               renderCustomFooter={renderFooter}
               viewModeEnabled={viewModeEnabled}

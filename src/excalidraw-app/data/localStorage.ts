@@ -97,7 +97,12 @@ export const importFromLocalStorage = () => {
   }
   return { elements, appState };
 };
-
+export const removeFromLocalStorage = () => {
+  localStorage.removeItem(STORAGE_KEYS.LOCAL_STORAGE_APP_STATE);
+  localStorage.removeItem(STORAGE_KEYS.LOCAL_STORAGE_COLLAB);
+  localStorage.removeItem(STORAGE_KEYS.LOCAL_STORAGE_ELEMENTS);
+  localStorage.removeItem(STORAGE_KEYS.LOCAL_STORAGE_KEY_COLLAB_FORCE_FLAG);
+};
 export const getElementsStorageSize = () => {
   try {
     const elements = localStorage.getItem(STORAGE_KEYS.LOCAL_STORAGE_ELEMENTS);

@@ -65,6 +65,7 @@ interface LayerUIProps {
   toggleZenMode: () => void;
   langCode: Language["code"];
   isCollaborating: boolean;
+  renderSaveAndClearBtn?: () => JSX.Element;
   renderTopRightUI?: (isMobile: boolean, appState: AppState) => JSX.Element;
   renderCustomFooter?: (isMobile: boolean, appState: AppState) => JSX.Element;
   viewModeEnabled: boolean;
@@ -373,6 +374,7 @@ const LayerUI = ({
   showThemeBtn,
   toggleZenMode,
   isCollaborating,
+  renderSaveAndClearBtn,
   renderTopRightUI,
   renderCustomFooter,
   viewModeEnabled,
@@ -638,6 +640,7 @@ const LayerUI = ({
                     </Tooltip>
                   ))}
             </UserList>
+            {renderSaveAndClearBtn?.()}
             {renderTopRightUI?.(isMobile, appState)}
           </div>
         </div>

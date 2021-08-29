@@ -14,6 +14,7 @@ import { DEFAULT_UI_OPTIONS } from "../../constants";
 const Excalidraw = (props: ExcalidrawProps) => {
   const {
     onChange,
+    onSaveAndClear,
     initialData,
     excalidrawRef,
     onCollabButtonClick,
@@ -73,6 +74,7 @@ const Excalidraw = (props: ExcalidrawProps) => {
     <InitializeApp langCode={langCode}>
       <App
         onChange={onChange}
+        onSaveAndClear={onSaveAndClear}
         initialData={initialData}
         excalidrawRef={excalidrawRef}
         onCollabButtonClick={onCollabButtonClick}

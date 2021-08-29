@@ -171,6 +171,10 @@ export interface ExcalidrawProps {
     elements: readonly ExcalidrawElement[],
     appState: AppState,
   ) => void;
+  onSaveAndClear?: (
+    elements: readonly ExcalidrawElement[],
+    appState: AppState,
+  ) => void;
   initialData?: ImportedDataState | null | Promise<ImportedDataState | null>;
   excalidrawRef?: ForwardRef<ExcalidrawAPIRefValue>;
   onCollabButtonClick?: () => void;
